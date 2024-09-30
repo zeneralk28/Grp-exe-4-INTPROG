@@ -5,32 +5,33 @@ $dbname = 'dbpersonal';
 $username = 'root';
 $password = ''; 
 
-try {
-    $pdo = new PDO("mysql:host=$host;dbname=$dbname", $username, $password);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+//Send info to the database
+$conn = new mysqli($host, $username, $password, $dbname);
 
-    // Check if form data is submitted
-    if ($_SERVER["REQUEST_METHOD"] == "POST") {
-        $name = htmlspecialchars($_POST['name']);
-        $email = htmlspecialchars($_POST['email']);
-        $recipient = htmlspecialchars($_POST['recipient']);
-        $message = htmlspecialchars($_POST['message']);
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
+  }
+  echo "Connected successfully";
+    //POST request
+  if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $name = htmlspecialchars($_POST['name']);
+    $email = htmlspecialchars($_POST['email']);
+    $recipient = htmlspecialchars($_POST['recipient']);
+    $message = htmlspecialchars($_POST['message']);
 
-        $stmt = $pdo->prepare("INSERT INTO messages (name, email, recipient, message) VALUES (:name, :email, :recipient, :message)");
-        $stmt->bindParam(':name', $name);
-        $stmt->bindParam(':email', $email);
-        $stmt->bindParam(':recipient', $recipient);
-        $stmt->bindParam(':message', $message);
+    $stmt = $conn->prepare("INSERT INTO messages (name, email, recipient, message) VALUES (?, ?, ?, ?)");
+    $stmt->bind_Param("ssss", $name, $email, $recipient, $message);
 
-        if ($stmt->execute()) {
-            // Redirect to message_receipt.php with the form data in the URL (GET method)
-            header("Location: message_receipt.php?name=$name&email=$email&recipient=$recipient&message=$message");
-            exit();
-        } else {
-            echo "Failed to send the message.";
-        }
+    if ($stmt->execute()) {
+
+        header("Location: message_receipt.php?name=$name&email=$email&recipient=$recipient&message=$message");
+        exit();
+    } else {
+        echo "Failed to send the message.";
     }
-} catch (PDOException $e) {
-    echo "Error: " . $e->getMessage();
-}
+
+  }
+
+$stmt->close();
+$conn->close();
 ?>
